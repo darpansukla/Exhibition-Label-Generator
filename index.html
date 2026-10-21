@@ -42,27 +42,6 @@
             letter-spacing: -0.02em;
         }
 
-        .download-btn {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            color: #ffffff;
-            border: none;
-            padding: 12px 24px;
-            font-size: 0.95rem;
-            font-weight: 700;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
-        }
-
         .status-message {
             text-align: center;
             color: #94a3b8;
@@ -79,7 +58,6 @@
             background-color: #ffffff;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
             border-radius: 4px;
-            
             display: grid;
             grid-template-columns: repeat(3, 6.5cm);
             grid-auto-rows: 3cm;
@@ -201,9 +179,6 @@
 
     <div class="controls-panel">
         <h1 class="controls-title">Exhibition Label Generator</h1>
-        <button class="download-btn" onclick="downloadHighQualityImages()">
-            📸 Download High Quality Image (PNG)
-        </button>
     </div>
 
     <div id="statusMessage" class="status-message">Loading live dataset and rendering labels...</div>
@@ -239,16 +214,18 @@
         function parseCSV(text) {
             const lines = text.split(/\r\n|\n/);
             const result = [];
+
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
-                
+
                 const row = [];
                 let insideQuote = false;
                 let entry = '';
-                
+
                 for (let j = 0; j < line.length; j++) {
                     const char = line[j];
+
                     if (char === '"' || char === "'") {
                         insideQuote = !insideQuote;
                     } else if (char === ',' && !insideQuote) {
@@ -258,9 +235,11 @@
                         entry += char;
                     }
                 }
+
                 row.push(entry.trim());
                 result.push(row);
             }
+
             return result;
         }
 
@@ -269,10 +248,10 @@
             if (rows.length < 2) return;
 
             const headers = rows[0].map(h => h.toLowerCase().trim());
-            
+
             const nameIdx = headers.findIndex(h => h.includes('name'));
             const photoIdx = headers.findIndex(h => h.includes('profile') || h.includes('photo'));
-            
+
             const desc1Idx = headers.findIndex(h => h.includes('artwork 1 description') || h.includes('desc 1'));
             const desc2Idx = headers.findIndex(h => h.includes('artwork 2 description') || h.includes('desc 2'));
 
@@ -287,6 +266,7 @@
                 const photoUrl = formatGoogleDriveUrl(rawPhoto);
 
                 const desc1 = desc1Idx !== -1 ? row[desc1Idx] : '';
+
                 if (desc1) {
                     labels.push({
                         artistName: name,
@@ -296,6 +276,7 @@
                 }
 
                 const desc2 = desc2Idx !== -1 ? row[desc2Idx] : '';
+
                 if (desc2) {
                     labels.push({
                         artistName: name,
@@ -310,9 +291,11 @@
 
         function formatGoogleDriveUrl(url) {
             if (!url) return '';
+
             url = url.trim().replace(/^["']|["']$/g, '');
 
             const driveMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+
             if (driveMatch && driveMatch[1]) {
                 const fileId = driveMatch[1];
                 return `https://drive.google.com/thumbnail?id=${fileId}&sz=w500`;
@@ -330,7 +313,7 @@
                 return;
             }
 
-            const LABELS_PER_PAGE = 24; 
+            const LABELS_PER_PAGE = 24;
             let currentPage = createA4Page();
             container.appendChild(currentPage);
 
@@ -343,9 +326,9 @@
                 const labelCard = document.createElement('div');
                 labelCard.className = 'label-card';
 
-                const photoHtml = data.photoUrl ? 
-                    `<img src="${data.photoUrl}" class="artist-photo" alt="${data.artistName}" onerror="handleImageError(this, '${data.photoUrl}')">` : 
-                    `<span class="photo-placeholder">No Photo</span>`;
+                const photoHtml = data.photoUrl
+                    ? `<img src="${data.photoUrl}" class="artist-photo" alt="${data.artistName}" onerror="handleImageError(this, '${data.photoUrl}')">`
+                    : `<span class="photo-placeholder">No Photo</span>`;
 
                 labelCard.innerHTML = `
                     <div class="fold-zone"></div>
@@ -375,9 +358,10 @@
 
         function handleImageError(imgEl, originalUrl) {
             const driveMatch = originalUrl.match(/id=([a-zA-Z0-9_-]+)/) || originalUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+
             if (driveMatch && driveMatch[1]) {
                 const fileId = driveMatch[1];
-                
+
                 if (!imgEl.dataset.tryLh3) {
                     imgEl.dataset.tryLh3 = 'true';
                     imgEl.src = `https://lh3.googleusercontent.com/d/${fileId}=s500`;
@@ -396,32 +380,6 @@
             const page = document.createElement('div');
             page.className = 'a4-page';
             return page;
-        }
-
-        function downloadHighQualityImages() {
-            const pages = document.querySelectorAll('.a4-page');
-            if (!pages.length) return;
-
-            const statusEl = document.getElementById('statusMessage');
-            statusEl.textContent = "Generating high quality PNG image for printing...";
-
-            pages.forEach((page, idx) => {
-                html2canvas(page, {
-                    scale: 3,
-                    useCORS: false,
-                    allowTaint: true,
-                    backgroundColor: '#ffffff'
-                }).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = `Art_Exhibition_Labels_Page_${idx + 1}.png`;
-                    link.href = canvas.toDataURL('image/png', 1.0);
-                    link.click();
-                    statusEl.textContent = "High quality image downloaded successfully!";
-                }).catch(err => {
-                    console.error("Image generation error:", err);
-                    statusEl.textContent = "Error generating image.";
-                });
-            });
         }
     </script>
 </body>
