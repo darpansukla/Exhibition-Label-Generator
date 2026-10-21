@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Art Exhibition Label Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #0f172a;
+            color: #0f172a;
+            padding: 30px 20px;
+        }
+
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 20px 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .controls-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.02em;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: #ffffff;
+            border: none;
+            padding: 12px 24px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+        }
+
+        .status-message {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 25px;
+        }
+
+        /* Standard A4 Page Grid Layout (Exactly 3 items per row) */
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 10mm 7.5mm;
+            margin: 0 auto 30px auto;
+            background-color: #ffffff;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border-radius: 4px;
+            
+            display: grid;
+            grid-template-columns: repeat(3, 6.5cm);
+            grid-auto-rows: 3cm;
+            gap: 3mm 2.5mm;
+            justify-content: center;
+            align-content: flex-start;
+            page-break-after: always;
+        }
+
+        /* Fixed Sticker Dimensions: 6.5cm x 3cm - Clean dotted borders (Zero ink fill) */
+        .label-card {
+            width: 6.5cm;
+            height: 3cm;
+            border: 1px dashed #64748b;
+            background: #ffffff;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top 1cm Fold Flap Zone - Pure white with dotted fold line, zero text */
+        .fold-zone {
+            height: 1cm;
+            width: 100%;
+            border-bottom: 1px dashed #64748b;
+            background-color: #ffffff;
+            flex-shrink: 0;
+        }
+
+        /* Main Content Container (Placed strictly AFTER the 1cm fold line) */
+        .label-content {
+            height: 2cm;
+            width: 100%;
+            padding: 2mm 2.5mm;
+            display: flex;
+            gap: 2.5mm;
+            align-items: center;
+            box-sizing: border-box;
+            background-color: #ffffff;
+        }
+
+        /* Circular Artist Photo Container */
+        .artist-photo-container {
+            width: 1.7cm;
+            height: 1.7cm;
+            flex-shrink: 0;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #475569;
+        }
+
+        .artist-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .photo-placeholder {
+            font-size: 5pt;
+            color: #64748b;
+            font-weight: 600;
+            text-align: center;
+            padding: 2px;
+        }
+
+        /* Text Details Section */
+        .label-details {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .section-artist {
+            margin-bottom: 3.5px;
+        }
+
+        .field-label {
+            font-size: 4.5pt;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #475569;
+            letter-spacing: 0.6px;
+            display: block;
+            margin-bottom: 0.5px;
+        }
+
+        .artist-name {
+            font-size: 8pt;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .artwork-desc {
+            font-size: 5.8pt;
+            color: #1e293b;
+            line-height: 1.25;
+            font-weight: 600;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls-panel">
+        <h1 class="controls-title">Exhibition Label Generator</h1>
+        <button class="download-btn" onclick="downloadHighQualityImages()">
+            📸 Download High Quality Image (PNG)
+        </button>
+    </div>
+
+    <div id="statusMessage" class="status-message">Loading live dataset and rendering labels...</div>
+
+    <div id="labelsContainer"></div>
+
+    <script>
+        const DEFAULT_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTFRg_lxjO5-ps81aRxQj0V46eA9MQjMPcWM4p_OQgKPRjbaTXC5w24l45yfokmoZuyUmkEHTGtoX5q/pub?gid=0&single=true&output=csv";
+
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchSheetData();
+        });
+
+        function fetchSheetData() {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = "Fetching live spreadsheet data...";
+
+            fetch(DEFAULT_CSV_URL)
+                .then(response => {
+                    if (!response.ok) throw new Error("Network response failed");
+                    return response.text();
+                })
+                .then(csvText => {
+                    statusEl.textContent = "Formatting artwork labels and loading profile photos...";
+                    processCSV(csvText);
+                })
+                .catch(error => {
+                    console.error("Error loading CSV:", error);
+                    statusEl.textContent = "Unable to fetch live sheet data.";
+                });
+        }
+
+        function parseCSV(text) {
+            const lines = text.split(/\r\n|\n/);
+            const result = [];
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                const row = [];
+                let insideQuote = false;
+                let entry = '';
+                
+                for (let j = 0; j < line.length; j++) {
+                    const char = line[j];
+                    if (char === '"' || char === "'") {
+                        insideQuote = !insideQuote;
+                    } else if (char === ',' && !insideQuote) {
+                        row.push(entry.trim());
+                        entry = '';
+                    } else {
+                        entry += char;
+                    }
+                }
+                row.push(entry.trim());
+                result.push(row);
+            }
+            return result;
+        }
+
+        function processCSV(csvText) {
+            const rows = parseCSV(csvText);
+            if (rows.length < 2) return;
+
+            const headers = rows[0].map(h => h.toLowerCase().trim());
+            
+            const nameIdx = headers.findIndex(h => h.includes('name'));
+            const photoIdx = headers.findIndex(h => h.includes('profile') || h.includes('photo'));
+            
+            const desc1Idx = headers.findIndex(h => h.includes('artwork 1 description') || h.includes('desc 1'));
+            const desc2Idx = headers.findIndex(h => h.includes('artwork 2 description') || h.includes('desc 2'));
+
+            const labels = [];
+
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || row.length === 0) continue;
+
+                const name = nameIdx !== -1 ? row[nameIdx] : '';
+                const rawPhoto = photoIdx !== -1 ? row[photoIdx] : '';
+                const photoUrl = formatGoogleDriveUrl(rawPhoto);
+
+                const desc1 = desc1Idx !== -1 ? row[desc1Idx] : '';
+                if (desc1) {
+                    labels.push({
+                        artistName: name,
+                        photoUrl: photoUrl,
+                        description: desc1
+                    });
+                }
+
+                const desc2 = desc2Idx !== -1 ? row[desc2Idx] : '';
+                if (desc2) {
+                    labels.push({
+                        artistName: name,
+                        photoUrl: photoUrl,
+                        description: desc2
+                    });
+                }
+            }
+
+            renderLabels(labels);
+        }
+
+        function formatGoogleDriveUrl(url) {
+            if (!url) return '';
+            url = url.trim().replace(/^["']|["']$/g, '');
+
+            const driveMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+            if (driveMatch && driveMatch[1]) {
+                const fileId = driveMatch[1];
+                return `https://drive.google.com/thumbnail?id=${fileId}&sz=w500`;
+            }
+
+            return url;
+        }
+
+        function renderLabels(labels) {
+            const container = document.getElementById('labelsContainer');
+            container.innerHTML = '';
+
+            if (labels.length === 0) {
+                container.innerHTML = '<p style="text-align:center; padding: 20px; color:#fff;">No artwork descriptions found in spreadsheet.</p>';
+                return;
+            }
+
+            const LABELS_PER_PAGE = 24; 
+            let currentPage = createA4Page();
+            container.appendChild(currentPage);
+
+            labels.forEach((data, index) => {
+                if (index > 0 && index % LABELS_PER_PAGE === 0) {
+                    currentPage = createA4Page();
+                    container.appendChild(currentPage);
+                }
+
+                const labelCard = document.createElement('div');
+                labelCard.className = 'label-card';
+
+                const photoHtml = data.photoUrl ? 
+                    `<img src="${data.photoUrl}" class="artist-photo" alt="${data.artistName}" onerror="handleImageError(this, '${data.photoUrl}')">` : 
+                    `<span class="photo-placeholder">No Photo</span>`;
+
+                labelCard.innerHTML = `
+                    <div class="fold-zone"></div>
+                    <div class="label-content">
+                        <div class="artist-photo-container">
+                            ${photoHtml}
+                        </div>
+                        <div class="label-details">
+                            <div class="section-artist">
+                                <span class="field-label">Artist Name</span>
+                                <div class="artist-name">${data.artistName || 'Artist Name'}</div>
+                            </div>
+                            ${data.description ? `
+                            <div>
+                                <span class="field-label">Artwork Description</span>
+                                <div class="artwork-desc">${data.description}</div>
+                            </div>` : ''}
+                        </div>
+                    </div>
+                `;
+
+                currentPage.appendChild(labelCard);
+            });
+
+            document.getElementById('statusMessage').textContent = "Labels ready for download.";
+        }
+
+        function handleImageError(imgEl, originalUrl) {
+            const driveMatch = originalUrl.match(/id=([a-zA-Z0-9_-]+)/) || originalUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if (driveMatch && driveMatch[1]) {
+                const fileId = driveMatch[1];
+                
+                if (!imgEl.dataset.tryLh3) {
+                    imgEl.dataset.tryLh3 = 'true';
+                    imgEl.src = `https://lh3.googleusercontent.com/d/${fileId}=s500`;
+                } else if (!imgEl.dataset.tryProxy) {
+                    imgEl.dataset.tryProxy = 'true';
+                    imgEl.src = `https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy?container=focus&refresh=2592000&url=${encodeURIComponent(`https://drive.google.com/uc?export=view&id=${fileId}`)}`;
+                } else {
+                    imgEl.parentElement.innerHTML = '<span class="photo-placeholder">No Photo</span>';
+                }
+            } else {
+                imgEl.parentElement.innerHTML = '<span class="photo-placeholder">No Photo</span>';
+            }
+        }
+
+        function createA4Page() {
+            const page = document.createElement('div');
+            page.className = 'a4-page';
+            return page;
+        }
+
+        function downloadHighQualityImages() {
+            const pages = document.querySelectorAll('.a4-page');
+            if (!pages.length) return;
+
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = "Generating high quality PNG image for printing...";
+
+            pages.forEach((page, idx) => {
+                html2canvas(page, {
+                    scale: 3,
+                    useCORS: false,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff'
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = `Art_Exhibition_Labels_Page_${idx + 1}.png`;
+                    link.href = canvas.toDataURL('image/png', 1.0);
+                    link.click();
+                    statusEl.textContent = "High quality image downloaded successfully!";
+                }).catch(err => {
+                    console.error("Image generation error:", err);
+                    statusEl.textContent = "Error generating image.";
+                });
+            });
+        }
+    </script>
+</body>
+</html>
