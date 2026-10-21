@@ -49,28 +49,28 @@
             margin-bottom: 25px;
         }
 
-        /* Standard A4 Page Grid Layout (Exactly 3 items per row) */
+        /* Standard A4 Page Grid Layout (3 columns x 9 rows = 27 stickers per page) */
         .a4-page {
             width: 210mm;
             min-height: 297mm;
-            padding: 10mm 7.5mm;
+            padding: 8mm 7.5mm;
             margin: 0 auto 30px auto;
             background-color: #ffffff;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
             border-radius: 4px;
             display: grid;
             grid-template-columns: repeat(3, 6.5cm);
-            grid-auto-rows: 3cm;
-            gap: 3mm 2.5mm;
+            grid-template-rows: repeat(9, 2.9cm);
+            gap: 2mm 2.5mm;
             justify-content: center;
             align-content: flex-start;
             page-break-after: always;
         }
 
-        /* Fixed Sticker Dimensions: 6.5cm x 3cm - Clean dotted borders (Zero ink fill) */
+        /* Fixed Sticker Dimensions: 6.5cm x 2.9cm - Clean dotted borders (Zero ink fill) */
         .label-card {
             width: 6.5cm;
-            height: 3cm;
+            height: 2.9cm;
             border: 1px dashed #64748b;
             background: #ffffff;
             overflow: hidden;
@@ -79,7 +79,7 @@
             flex-direction: column;
         }
 
-        /* Top 1cm Fold Flap Zone - Pure white with dotted fold line, zero text */
+        /* Top Fold Flap Zone */
         .fold-zone {
             height: 1cm;
             width: 100%;
@@ -88,11 +88,11 @@
             flex-shrink: 0;
         }
 
-        /* Main Content Container (Placed strictly AFTER the 1cm fold line) */
+        /* Main Content Container */
         .label-content {
-            height: 2cm;
+            height: 1.9cm;
             width: 100%;
-            padding: 2mm 2.5mm;
+            padding: 1.5mm 2.5mm;
             display: flex;
             gap: 2.5mm;
             align-items: center;
@@ -102,8 +102,8 @@
 
         /* Circular Artist Photo Container */
         .artist-photo-container {
-            width: 1.7cm;
-            height: 1.7cm;
+            width: 1.6cm;
+            height: 1.6cm;
             flex-shrink: 0;
             border-radius: 50%;
             overflow: hidden;
@@ -140,7 +140,7 @@
         }
 
         .section-artist {
-            margin-bottom: 3.5px;
+            margin-bottom: 2px;
         }
 
         .field-label {
@@ -154,7 +154,7 @@
         }
 
         .artist-name {
-            font-size: 8pt;
+            font-size: 7.5pt;
             font-weight: 800;
             color: #0f172a;
             line-height: 1.1;
@@ -164,9 +164,9 @@
         }
 
         .artwork-desc {
-            font-size: 5.8pt;
+            font-size: 5.2pt;
             color: #1e293b;
-            line-height: 1.25;
+            line-height: 1.2;
             font-weight: 600;
             display: -webkit-box;
             -webkit-line-clamp: 3;
@@ -313,7 +313,7 @@
                 return;
             }
 
-            const LABELS_PER_PAGE = 24;
+            const LABELS_PER_PAGE = 27;
             let currentPage = createA4Page();
             container.appendChild(currentPage);
 
