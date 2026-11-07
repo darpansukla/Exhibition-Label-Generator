@@ -157,40 +157,6 @@
       letter-spacing: 0.4px;
     }
 
-    .photo-upload-row {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .photo-preview-circle {
-      width: 72px;
-      height: 72px;
-      border-radius: 50%;
-      border: 2px solid #94a3b8;
-      background: #f1f5f9;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: #64748b;
-      text-align: center;
-      flex-shrink: 0;
-    }
-
-    .photo-preview-circle img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    input[type="file"] {
-      font-size: 0.85rem;
-      color: #334155;
-    }
-
     input[type="text"],
     select,
     textarea {
@@ -211,9 +177,91 @@
       border-color: var(--primary);
     }
 
-    textarea {
-      resize: vertical;
-      min-height: 82px;
+    /* Multi-select Student List Box */
+    .student-search-input {
+      margin-bottom: 8px;
+      padding: 9px 12px !important;
+      font-size: 0.9rem !important;
+    }
+
+    .student-checklist-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+      color: #334155;
+    }
+
+    .student-checklist-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .mini-chip-btn {
+      background: #e2e8f0;
+      border: none;
+      border-radius: 5px;
+      padding: 4px 9px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #0f172a;
+      cursor: pointer;
+    }
+
+    .mini-chip-btn:hover {
+      background: #cbd5e1;
+    }
+
+    .student-checklist-box {
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      max-height: 280px;
+      overflow-y: auto;
+      background: #ffffff;
+    }
+
+    .student-option-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      cursor: pointer;
+      font-size: 0.94rem;
+      font-weight: 600;
+      color: #0f172a;
+      user-select: none;
+      transition: background 0.12s;
+    }
+
+    .student-option-item:last-child {
+      border-bottom: none;
+    }
+
+    .student-option-item:hover {
+      background: #f8fafc;
+    }
+
+    .student-option-item.selected {
+      background: #eff6ff;
+      color: var(--primary);
+    }
+
+    .student-option-item input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      accent-color: var(--primary);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .student-empty-msg {
+      padding: 16px;
+      text-align: center;
+      font-size: 0.86rem;
+      color: #64748b;
     }
 
     .sheet-status-row {
@@ -520,7 +568,7 @@
       overflow: hidden;
     }
 
-    /* Circular Artist Photo on Left */
+    /* Circular Artist Photo on Left — Clickable to Upload/Change Photo */
     .sticker-avatar {
       width: 15.5mm;
       height: 15.5mm;
@@ -532,11 +580,20 @@
       justify-content: center;
       overflow: hidden;
       flex-shrink: 0;
-      font-size: 7.5px;
-      font-weight: 600;
-      color: #6b7280;
+      font-size: 7px;
+      font-weight: 700;
+      color: #4b5563;
       text-align: center;
-      line-height: 1.1;
+      line-height: 1.15;
+      cursor: pointer;
+      position: relative;
+      padding: 1px;
+    }
+
+    .sticker-avatar:hover {
+      border-color: #0284c7;
+      background: #e0f2fe;
+      color: #0369a1;
     }
 
     .sticker-avatar img {
@@ -544,6 +601,26 @@
       height: 100%;
       object-fit: cover;
       display: block;
+    }
+
+    .avatar-upload-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      color: #ffffff;
+      font-size: 6.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.14s ease;
+      text-align: center;
+      padding: 2px;
+    }
+
+    .sticker-avatar:hover .avatar-upload-overlay {
+      opacity: 1;
     }
 
     /* Right Text Column */
@@ -629,6 +706,11 @@
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
 
+    .mini-photo {
+      background: #7c3aed;
+      color: #ffffff;
+    }
+
     .mini-copy {
       background: #0284c7;
       color: #ffffff;
@@ -647,7 +729,8 @@
     /* Export Mode: Hide interactive badges/controls cleanly */
     .exporting .card-actions,
     .exporting .paste-here-btn,
-    .exporting .empty-slot-label {
+    .exporting .empty-slot-label,
+    .exporting .avatar-upload-overlay {
       display: none !important;
     }
 
@@ -680,6 +763,9 @@
 </head>
 <body>
 
+  <!-- Hidden file input used when uploading/replacing photo directly on any A4 sticker -->
+  <input type="file" id="slotPhotoFileInput" accept="image/*" style="display:none;" onchange="handleSlotPhotoFileChange(event)" />
+
   <!-- Top Navigation Bar -->
   <header class="topbar">
     <div class="brand">
@@ -697,65 +783,47 @@
   </header>
 
   <main class="main-container">
-    <!-- ==================== SCREEN 1: INPUT FORM ==================== -->
+    <!-- ==================== SCREEN 1: SELECT ARTISTS ==================== -->
     <section id="screen1" class="screen active">
       <div class="form-card">
-        <h2>Create New Artist Sticker Label</h2>
+        <h2>Select Artist from Google Sheet</h2>
         <p class="sub">
-          Select an Artist (Student Name) from Google Sheet to auto-load their Profile Photo, then enter Artwork Description. Each page fits 3 columns × 9 rows (27 stickers per A4 sheet).
+          Select one or multiple students at a time, then generate labels to A4. Photos load automatically from the Google Sheet (or can be uploaded directly on the A4 sheet), and each artwork description can be edited directly on the A4 labels.
         </p>
 
-        <form id="labelForm" onsubmit="handleGenerateLabel(event)">
-          <!-- Select Artist from Google Sheet -->
+        <form id="labelForm" onsubmit="handleGenerateSelectedLabels(event)">
+          <!-- Select Artist from Google Sheet (Only Student Name displayed, Multi-Select) -->
           <div class="form-group">
-            <label for="artistSelectDropdown">Select Artist from Google Sheet *</label>
-            <select id="artistSelectDropdown" onchange="handleArtistSelect(event)">
-              <option value="">Loading artists from Google Sheet...</option>
-            </select>
+            <label for="studentSearchInput">Select Artist from Google Sheet *</label>
+            <input
+              type="text"
+              id="studentSearchInput"
+              class="student-search-input"
+              placeholder="Search student name..."
+              oninput="renderStudentChecklist()"
+            />
+
+            <div class="student-checklist-toolbar">
+              <span id="selectedStudentsCountText">0 students selected</span>
+              <div class="student-checklist-actions">
+                <button type="button" class="mini-chip-btn" onclick="selectAllVisibleStudents()">Select All</button>
+                <button type="button" class="mini-chip-btn" onclick="clearSelectedStudents()">Clear</button>
+              </div>
+            </div>
+
+            <div id="studentChecklistBox" class="student-checklist-box">
+              <div class="student-empty-msg">Loading students from Google Sheet...</div>
+            </div>
+
             <div class="sheet-status-row">
               <span id="sheetLoadStatus">Connecting to Google Sheet...</span>
               <button type="button" onclick="loadArtistsFromGoogleSheet()">↻ Reload Sheet</button>
             </div>
           </div>
 
-          <!-- Profile Photo Preview + Optional Manual Override -->
-          <div class="form-group">
-            <label for="artistPhotoInput">1. Artist Profile Photo (Loaded from Sheet / Optional Override)</label>
-            <div class="photo-upload-row">
-              <div class="photo-preview-circle" id="formPhotoPreview">No Photo</div>
-              <div>
-                <input type="file" id="artistPhotoInput" accept="image/*" onchange="handlePhotoUpload(event)" />
-                <div style="font-size: 0.76rem; color: #64748b; margin-top: 4px;">
-                  Automatically loaded from <strong>Passport Photo URL</strong>. Upload a file only if you want to override it.
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Artist Name (Auto-filled from Student Name) -->
-          <div class="form-group">
-            <label for="artistNameInput">2. Artist Name *</label>
-            <input
-              type="text"
-              id="artistNameInput"
-              placeholder="Auto-filled from Student Name"
-              required
-            />
-          </div>
-
-          <!-- Artwork Description -->
-          <div class="form-group">
-            <label for="artworkDescInput">3. Artwork Description *</label>
-            <textarea
-              id="artworkDescInput"
-              placeholder="e.g. ACRYLIC ON CANVAS, 24X36 INCHES"
-              required
-            ></textarea>
-          </div>
-
           <div class="form-actions">
             <button type="submit" class="btn btn-primary">
-              + Generate Label &amp; Add to A4
+              + Generate Labels to A4
             </button>
             <button type="button" class="btn btn-secondary" onclick="switchScreen(2)">
               View A4 Sheet →
@@ -771,7 +839,7 @@
       <div class="editor-toolbar">
         <div class="toolbar-group">
           <button type="button" class="btn btn-secondary" onclick="switchScreen(1)">
-            ← Add Another Label
+            ← Select More Artists
           </button>
 
           <!-- Editable A4 Size Controls -->
@@ -783,6 +851,10 @@
             <input type="number" id="pageHeightInput" value="297" min="150" max="600" onchange="updatePageDimensions()" />
             <button type="button" class="mini-btn" style="background:#334155;color:#fff;padding:4px 7px;" onclick="resetA4Size()">Reset A4</button>
           </div>
+
+          <button type="button" class="btn btn-info" onclick="reloadSheetDataForAllLabels()" title="Load/refresh photos and details from Google Sheet for all labels">
+            ↻ Load Sheet Data for All Labels
+          </button>
         </div>
 
         <div class="toolbar-group">
@@ -806,10 +878,10 @@
 
       <!-- Quick Instructions -->
       <div class="helper-bar">
+        <span class="helper-pill"><strong>Upload/Change Photo:</strong> Click any circular photo box (or <em>Photo</em> button) to upload a student photo</span>
+        <span class="helper-pill"><strong>Edit Description:</strong> Click any Artwork Description or Artist Name on the sheet to edit</span>
         <span class="helper-pill"><strong>Drag &amp; Drop:</strong> Drag any sticker to move or swap slots</span>
         <span class="helper-pill"><strong>Copy &amp; Paste:</strong> Hover any sticker → <em>Copy</em> or <em>+1 Next</em> to duplicate nearby</span>
-        <span class="helper-pill"><strong>Inline Edit:</strong> Click Artist Name or Artwork Description directly on the sheet to edit</span>
-        <span class="helper-pill"><strong>Auto Pagination:</strong> 27 stickers (3 cols × 9 rows) per page; Page 2+ adds automatically</span>
       </div>
 
       <!-- Dynamic Multi-Page A4 Container -->
@@ -825,14 +897,17 @@
     const GOOGLE_SHEET_CSV_URL =
       'https://docs.google.com/spreadsheets/d/e/2PACX-1vR9MYoRpbaJg7oK3vqkTjfsm616eD9xvUeeE3DxTSzWCF5gCdBOdqfnQQbbwbnycXopvrScE5kg-3R6/pub?gid=0&single=true&output=csv';
 
+    const DEFAULT_ARTWORK_DESCRIPTION = 'ACRYLIC ON CANVAS';
+
     const COLS = 3;
     const ROWS = 9;
     const SLOTS_PER_PAGE = COLS * ROWS; // 27 stickers per A4 sheet
 
-    // Array of slot objects (null = empty slot, object = { id, photo, name, description })
+    // Array of slot objects (null = empty slot, object = { id, photo, name, description, sheetIndex })
     let slots = new Array(SLOTS_PER_PAGE).fill(null);
     let sheetArtists = [];
-    let currentUploadedPhoto = null;
+    let selectedArtistIndices = new Set();
+    let activePhotoUploadSlotIndex = null;
     let copiedLabel = null;
     let draggedIndex = null;
 
@@ -842,7 +917,6 @@
       const trimmed = rawUrl.trim();
       if (!trimmed || trimmed.toLowerCase() === 'n/a' || trimmed === '-') return null;
 
-      // Match Google Drive /open?id=..., /file/d/..., /uc?id=...
       let fileId = null;
       const idParamMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]{15,})/);
       const filePathMatch = trimmed.match(/\/d\/([a-zA-Z0-9_-]{15,})/);
@@ -907,11 +981,11 @@
       return rows;
     }
 
-    // Fetch & load Student Name + Passport Photo URL from the published Google Sheet CSV
+    // Fetch & load Student Name + Passport Photo URL (and optional Artwork Description if present) from Google Sheet CSV
     async function loadArtistsFromGoogleSheet() {
-      const dropdown = document.getElementById('artistSelectDropdown');
+      const listBox = document.getElementById('studentChecklistBox');
       const statusEl = document.getElementById('sheetLoadStatus');
-      dropdown.innerHTML = '<option value="">Loading artists from Google Sheet...</option>';
+      listBox.innerHTML = '<div class="student-empty-msg">Loading students from Google Sheet...</div>';
       statusEl.textContent = 'Fetching Google Sheet data...';
 
       try {
@@ -927,7 +1001,9 @@
         const headers = parsedRows[0].map((h) => h.trim().toLowerCase());
         const nameColIdx = headers.findIndex((h) => h === 'student name');
         const photoColIdx = headers.findIndex((h) => h === 'passport photo url');
-        const regIdColIdx = headers.findIndex((h) => h === 'registration id');
+        const descColIdx = headers.findIndex(
+          (h) => h === 'artwork description' || h === 'description' || h === 'artwork'
+        );
 
         if (nameColIdx === -1) {
           throw new Error('"Student Name" column not found');
@@ -940,68 +1016,91 @@
           if (!studentName) continue;
 
           const rawPhotoUrl = photoColIdx !== -1 ? (cols[photoColIdx] || '').trim() : '';
-          const regId = regIdColIdx !== -1 ? (cols[regIdColIdx] || '').trim() : '';
+          const sheetDesc = descColIdx !== -1 ? (cols[descColIdx] || '').trim() : '';
 
           sheetArtists.push({
             index: sheetArtists.length,
             name: studentName,
-            regId: regId,
             photoUrl: normalizePhotoUrl(rawPhotoUrl),
-            rawPhotoUrl: rawPhotoUrl
+            description: sheetDesc || DEFAULT_ARTWORK_DESCRIPTION
           });
         }
 
-        dropdown.innerHTML = '<option value="">-- Choose an Artist (Student Name) --</option>';
-        sheetArtists.forEach((artist, idx) => {
-          const opt = document.createElement('option');
-          opt.value = String(idx);
-          opt.textContent = artist.regId
-            ? `${artist.name} (${artist.regId})`
-            : artist.name;
-          dropdown.appendChild(opt);
-        });
-
-        statusEl.textContent = `Loaded ${sheetArtists.length} artists from Google Sheet.`;
+        selectedArtistIndices.clear();
+        renderStudentChecklist();
+        statusEl.textContent = `Loaded ${sheetArtists.length} students from Google Sheet.`;
       } catch (err) {
-        dropdown.innerHTML = '<option value="">Could not load sheet — enter manually below</option>';
-        statusEl.textContent = `Sheet load notice: ${err.message}. You can still type Artist Name below.`;
+        listBox.innerHTML = `<div class="student-empty-msg">Could not load Google Sheet: ${escapeHTML(err.message)}</div>`;
+        statusEl.textContent = `Sheet load notice: ${err.message}`;
       }
     }
 
-    // Handle selection of an Artist from the Google Sheet dropdown
-    function handleArtistSelect(event) {
-      const selectedIdx = event.target.value;
-      const nameInput = document.getElementById('artistNameInput');
-      const previewEl = document.getElementById('formPhotoPreview');
-      const fileInput = document.getElementById('artistPhotoInput');
+    // Render Student Checklist (ONLY Student Name displayed, supports multiple selection)
+    function renderStudentChecklist() {
+      const listBox = document.getElementById('studentChecklistBox');
+      const searchVal = (document.getElementById('studentSearchInput').value || '').trim().toLowerCase();
 
-      fileInput.value = '';
+      const filtered = sheetArtists.filter((artist) =>
+        artist.name.toLowerCase().includes(searchVal)
+      );
 
-      if (selectedIdx === '') {
-        nameInput.value = '';
-        currentUploadedPhoto = null;
-        previewEl.innerHTML = 'No Photo';
+      updateSelectedCountDisplay();
+
+      if (sheetArtists.length === 0) {
+        listBox.innerHTML = '<div class="student-empty-msg">No students loaded yet.</div>';
         return;
       }
 
-      const artist = sheetArtists[parseInt(selectedIdx, 10)];
-      if (!artist) return;
-
-      nameInput.value = artist.name;
-      currentUploadedPhoto = artist.photoUrl;
-
-      if (artist.photoUrl) {
-        previewEl.innerHTML = `<img src="${escapeHTML(artist.photoUrl)}" crossorigin="anonymous" alt="Artist" onerror="handlePreviewImageError(this)" />`;
-      } else {
-        previewEl.innerHTML = 'No Photo';
+      if (filtered.length === 0) {
+        listBox.innerHTML = '<div class="student-empty-msg">No matching student name found.</div>';
+        return;
       }
+
+      listBox.innerHTML = filtered
+        .map((artist) => {
+          const isChecked = selectedArtistIndices.has(artist.index);
+          return `
+            <label class="student-option-item ${isChecked ? 'selected' : ''}">
+              <input
+                type="checkbox"
+                ${isChecked ? 'checked' : ''}
+                onchange="toggleStudentSelection(${artist.index}, this.checked)"
+              />
+              <span>${escapeHTML(artist.name)}</span>
+            </label>
+          `;
+        })
+        .join('');
     }
 
-    function handlePreviewImageError(imgEl) {
-      currentUploadedPhoto = null;
-      if (imgEl && imgEl.parentElement) {
-        imgEl.parentElement.innerHTML = 'No Photo';
+    function toggleStudentSelection(artistIdx, checked) {
+      if (checked) {
+        selectedArtistIndices.add(artistIdx);
+      } else {
+        selectedArtistIndices.delete(artistIdx);
       }
+      renderStudentChecklist();
+    }
+
+    function selectAllVisibleStudents() {
+      const searchVal = (document.getElementById('studentSearchInput').value || '').trim().toLowerCase();
+      sheetArtists.forEach((artist) => {
+        if (artist.name.toLowerCase().includes(searchVal)) {
+          selectedArtistIndices.add(artist.index);
+        }
+      });
+      renderStudentChecklist();
+    }
+
+    function clearSelectedStudents() {
+      selectedArtistIndices.clear();
+      renderStudentChecklist();
+    }
+
+    function updateSelectedCountDisplay() {
+      const count = selectedArtistIndices.size;
+      document.getElementById('selectedStudentsCountText').textContent =
+        count === 1 ? '1 student selected' : `${count} students selected`;
     }
 
     // Switch between Screen 1 and Screen 2
@@ -1014,21 +1113,6 @@
       if (screenNum === 2) {
         renderPages();
       }
-    }
-
-    // Optional manual photo upload override on Screen 1
-    function handlePhotoUpload(event) {
-      const file = event.target.files[0];
-      const previewEl = document.getElementById('formPhotoPreview');
-      if (!file) {
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        currentUploadedPhoto = e.target.result;
-        previewEl.innerHTML = `<img src="${currentUploadedPhoto}" alt="Artist" />`;
-      };
-      reader.readAsDataURL(file);
     }
 
     // Ensure slots array has enough pages (always multiples of 27)
@@ -1053,39 +1137,112 @@
       }
     }
 
-    // Generate label from Screen 1 and add to first available slot (auto-adds new page if full)
-    function handleGenerateLabel(event) {
+    // Generate Labels to A4 for all selected students
+    function handleGenerateSelectedLabels(event) {
       event.preventDefault();
-      const nameVal = document.getElementById('artistNameInput').value.trim();
-      const descVal = document.getElementById('artworkDescInput').value.trim();
 
-      if (!nameVal || !descVal) return;
-
-      const newLabel = {
-        id: Date.now() + Math.random(),
-        photo: currentUploadedPhoto,
-        name: nameVal,
-        description: descVal
-      };
-
-      // Find first empty slot across existing pages
-      let emptyIdx = slots.findIndex((item) => item === null);
-
-      // If all current pages (27 per page) are full, automatically add next A4 page
-      if (emptyIdx === -1) {
-        emptyIdx = slots.length;
-        ensurePageCapacity(emptyIdx);
+      if (selectedArtistIndices.size === 0) {
+        alert('Please select at least one student from the list.');
+        return;
       }
 
-      slots[emptyIdx] = newLabel;
+      const sortedIndices = Array.from(selectedArtistIndices).sort((a, b) => a - b);
 
-      // Reset form inputs for next entry
-      document.getElementById('labelForm').reset();
-      currentUploadedPhoto = null;
-      document.getElementById('formPhotoPreview').innerHTML = 'No Photo';
+      sortedIndices.forEach((artistIdx) => {
+        const artist = sheetArtists[artistIdx];
+        if (!artist) return;
 
+        let emptyIdx = slots.findIndex((item) => item === null);
+        if (emptyIdx === -1) {
+          emptyIdx = slots.length;
+          ensurePageCapacity(emptyIdx);
+        }
+
+        slots[emptyIdx] = {
+          id: Date.now() + Math.random(),
+          sheetIndex: artist.index,
+          photo: artist.photoUrl || null,
+          name: artist.name,
+          description: artist.description || DEFAULT_ARTWORK_DESCRIPTION
+        };
+      });
+
+      selectedArtistIndices.clear();
+      renderStudentChecklist();
       updateBadgeCount();
       switchScreen(2);
+    }
+
+    // Reload Google Sheet data and apply default photos/data to all labels on A4
+    async function reloadSheetDataForAllLabels() {
+      await loadArtistsFromGoogleSheet();
+
+      const byNameMap = new Map();
+      sheetArtists.forEach((a) => {
+        byNameMap.set(a.name.trim().toLowerCase(), a);
+      });
+
+      let updatedCount = 0;
+      for (let i = 0; i < slots.length; i++) {
+        const item = slots[i];
+        if (!item) continue;
+
+        const matchedArtist =
+          (typeof item.sheetIndex === 'number' && sheetArtists[item.sheetIndex]) ||
+          byNameMap.get(item.name.trim().toLowerCase());
+
+        if (matchedArtist) {
+          if (matchedArtist.photoUrl) {
+            item.photo = matchedArtist.photoUrl;
+          }
+          if (!item.description || item.description === DEFAULT_ARTWORK_DESCRIPTION) {
+            item.description = matchedArtist.description || DEFAULT_ARTWORK_DESCRIPTION;
+          }
+          updatedCount++;
+        }
+      }
+
+      renderPages();
+      if (updatedCount > 0) {
+        alert(`Loaded Google Sheet data for ${updatedCount} label(s).`);
+      }
+    }
+
+    // Upload or Replace Student Photo directly on any A4 sticker
+    function triggerSlotPhotoUpload(slotIndex) {
+      activePhotoUploadSlotIndex = slotIndex;
+      const fileInput = document.getElementById('slotPhotoFileInput');
+      fileInput.value = '';
+      fileInput.click();
+    }
+
+    function handleSlotPhotoFileChange(event) {
+      const file = event.target.files[0];
+      if (!file || activePhotoUploadSlotIndex === null || !slots[activePhotoUploadSlotIndex]) {
+        return;
+      }
+
+      const targetIndex = activePhotoUploadSlotIndex;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        if (slots[targetIndex]) {
+          slots[targetIndex].photo = e.target.result;
+          renderPages();
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleStickerImgError(imgEl, slotIndex) {
+      if (slots[slotIndex]) {
+        slots[slotIndex].photo = null;
+      }
+      if (imgEl && imgEl.parentElement) {
+        imgEl.parentElement.innerHTML = `
+          <span>Upload Photo</span>
+          <div class="avatar-upload-overlay">Upload Photo</div>
+        `;
+      }
     }
 
     function updateBadgeCount() {
@@ -1280,19 +1437,22 @@
             `;
           } else {
             const avatarHTML = item.photo
-              ? `<img src="${escapeHTML(item.photo)}" crossorigin="anonymous" alt="Artist" onerror="this.parentElement.innerHTML='No Photo'" />`
-              : `No Photo`;
+              ? `<img src="${escapeHTML(item.photo)}" crossorigin="anonymous" alt="Artist" onerror="handleStickerImgError(this, ${i})" />
+                 <div class="avatar-upload-overlay">Change Photo</div>`
+              : `<span>Upload Photo</span>
+                 <div class="avatar-upload-overlay">Upload Photo</div>`;
 
             slotDiv.innerHTML = `
               <div class="sticker-card" draggable="true" ondragstart="handleDragStart(event, ${i})">
                 <div class="card-actions">
+                  <button type="button" class="mini-btn mini-photo" title="Upload or Change Student Photo" onclick="triggerSlotPhotoUpload(${i})">Photo</button>
                   <button type="button" class="mini-btn mini-copy" title="Copy Label" onclick="copyLabel(${i})">Copy</button>
                   <button type="button" class="mini-btn mini-paste-next" title="Copy & Paste in Next Slot" onclick="duplicateNearby(${i})">+1 Next</button>
                   <button type="button" class="mini-btn mini-del" title="Remove Sticker" onclick="deleteLabel(${i})">✕</button>
                 </div>
                 <div class="sticker-top-band"></div>
                 <div class="sticker-body">
-                  <div class="sticker-avatar">${avatarHTML}</div>
+                  <div class="sticker-avatar" title="Click to upload or change student photo" onclick="triggerSlotPhotoUpload(${i})">${avatarHTML}</div>
                   <div class="sticker-info">
                     <div class="field-block">
                       <span class="field-caption">ARTIST NAME</span>
