@@ -1,386 +1,1214 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Art Exhibition Label Generator</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artist Artwork Label Generator — Made by Darpan sukla</title>
+  <!-- Libraries for PDF & PNG Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      --primary: #1a237e;
+      --primary-hover: #0d165e;
+      --accent: #00897b;
+      --bg-app: #eef2f6;
+      --panel-bg: #ffffff;
+      --border-ui: #cbd5e1;
+      --text-main: #0f172a;
+      --text-muted: #475569;
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+      /* Editable A4 Sheet Dimensions (Default 210mm x 297mm) */
+      --page-w: 210mm;
+      --page-h: 297mm;
+      --page-pad: 6mm;
+      --grid-gap: 2.5mm;
+    }
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: #0f172a;
-            color: #0f172a;
-            padding: 30px 20px;
-        }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-        .controls-panel {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
-            padding: 20px 30px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-            max-width: 900px;
-            margin: 0 auto 20px auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+    body {
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
 
-        .controls-title {
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: #0f172a;
-            letter-spacing: -0.02em;
-        }
+    /* Top Header */
+    .topbar {
+      background: #0f172a;
+      color: #ffffff;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+      z-index: 100;
+    }
 
-        .status-message {
-            text-align: center;
-            color: #94a3b8;
-            font-size: 0.9rem;
-            margin-bottom: 25px;
-        }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
-        /* Standard A4 Page Grid Layout (3 columns x 9 rows = 27 stickers per page) */
-        .a4-page {
-            width: 210mm;
-            min-height: 297mm;
-            padding: 8mm 7.5mm;
-            margin: 0 auto 30px auto;
-            background-color: #ffffff;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            border-radius: 4px;
-            display: grid;
-            grid-template-columns: repeat(3, 6.5cm);
-            grid-template-rows: repeat(9, 2.9cm);
-            gap: 2mm 2.5mm;
-            justify-content: center;
-            align-content: flex-start;
-            page-break-after: always;
-        }
+    .brand h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
 
-        /* Fixed Sticker Dimensions: 6.5cm x 2.9cm - Clean dotted borders (Zero ink fill) */
-        .label-card {
-            width: 6.5cm;
-            height: 2.9cm;
-            border: 1px dashed #64748b;
-            background: #ffffff;
-            overflow: hidden;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-        }
+    .credit-badge {
+      background: #f59e0b;
+      color: #0f172a;
+      font-size: 0.78rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.2px;
+    }
 
-        /* Top Fold Flap Zone */
-        .fold-zone {
-            height: 1cm;
-            width: 100%;
-            border-bottom: 1px dashed #64748b;
-            background-color: #ffffff;
-            flex-shrink: 0;
-        }
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+    }
 
-        /* Main Content Container */
-        .label-content {
-            height: 1.9cm;
-            width: 100%;
-            padding: 1.5mm 2.5mm;
-            display: flex;
-            gap: 2.5mm;
-            align-items: center;
-            box-sizing: border-box;
-            background-color: #ffffff;
-        }
+    .tab-btn {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
 
-        /* Circular Artist Photo Container */
-        .artist-photo-container {
-            width: 1.6cm;
-            height: 1.6cm;
-            flex-shrink: 0;
-            border-radius: 50%;
-            overflow: hidden;
-            background: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #475569;
-        }
+    .tab-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
 
-        .artist-photo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
-        }
+    .tab-btn.active {
+      background: #ffffff;
+      color: #0f172a;
+      border-color: #ffffff;
+    }
 
-        .photo-placeholder {
-            font-size: 5pt;
-            color: #64748b;
-            font-weight: 600;
-            text-align: center;
-            padding: 2px;
-        }
+    /* Screens Container */
+    .main-container {
+      flex: 1;
+      padding: 20px;
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+    }
 
-        /* Text Details Section */
-        .label-details {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            height: 100%;
-            overflow: hidden;
-        }
+    .screen {
+      display: none;
+    }
 
-        .section-artist {
-            margin-bottom: 2px;
-        }
+    .screen.active {
+      display: block;
+    }
 
-        .field-label {
-            font-size: 4.5pt;
-            font-weight: 800;
-            text-transform: uppercase;
-            color: #475569;
-            letter-spacing: 0.6px;
-            display: block;
-            margin-bottom: 0.5px;
-        }
+    /* ================= SCREEN 1: GENERATOR FORM ================= */
+    .form-card {
+      max-width: 580px;
+      margin: 24px auto;
+      background: var(--panel-bg);
+      border-radius: 14px;
+      padding: 28px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+      border: 1px solid var(--border-ui);
+    }
 
-        .artist-name {
-            font-size: 7.5pt;
-            font-weight: 800;
-            color: #0f172a;
-            line-height: 1.1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+    .form-card h2 {
+      font-size: 1.35rem;
+      margin-bottom: 6px;
+      color: #0f172a;
+    }
 
-        .artwork-desc {
-            font-size: 5.2pt;
-            color: #1e293b;
-            line-height: 1.2;
-            font-weight: 600;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-    </style>
+    .form-card p.sub {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 22px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #1e293b;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .photo-upload-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .photo-preview-circle {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 2px solid #94a3b8;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #64748b;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .photo-preview-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    input[type="file"] {
+      font-size: 0.85rem;
+      color: #334155;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 82px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .btn {
+      padding: 11px 18px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.08s ease, background 0.15s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      flex: 1;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .btn-secondary:hover {
+      background: #cbd5e1;
+    }
+
+    .btn-success {
+      background: #059669;
+      color: #ffffff;
+    }
+
+    .btn-success:hover {
+      background: #047857;
+    }
+
+    .btn-info {
+      background: #0284c7;
+      color: #ffffff;
+    }
+
+    .btn-info:hover {
+      background: #0369a1;
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      color: #ffffff;
+    }
+
+    .btn-danger:hover {
+      background: #b91c1c;
+    }
+
+    /* ================= SCREEN 2: A4 EDITOR & SHEET PREVIEW ================= */
+    .editor-toolbar {
+      background: #ffffff;
+      border: 1px solid var(--border-ui);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .size-control {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .size-control input[type="number"] {
+      width: 62px;
+      padding: 4px 6px;
+      border: 1px solid #94a3b8;
+      border-radius: 5px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .clipboard-banner {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      color: #92400e;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .clipboard-banner.visible {
+      display: flex;
+    }
+
+    .helper-bar {
+      font-size: 0.82rem;
+      color: #475569;
+      margin-bottom: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .helper-pill {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    /* Pages Wrapper */
+    .pages-workspace {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+      padding-bottom: 40px;
+      overflow-x: auto;
+    }
+
+    .page-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .page-header-bar {
+      width: var(--page-w);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    /* EXACT A4 PAPER SHEET */
+    .a4-sheet {
+      width: var(--page-w);
+      height: var(--page-h);
+      background: #ffffff;
+      padding: var(--page-pad);
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+      border: 1px solid #cbd5e1;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-rows: repeat(9, minmax(0, 1fr));
+      gap: var(--grid-gap);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ================= EXACT STICKER CARD FORMAT ================= */
+    .sticker-slot {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .sticker-slot.drag-over {
+      outline: 2px solid #0284c7;
+      outline-offset: -2px;
+      background: #e0f2fe;
+    }
+
+    /* Empty Slot Placeholder */
+    .empty-slot-box {
+      width: 100%;
+      height: 100%;
+      border: 0.6px solid #e2e8f0;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: #fafafa;
+      color: #94a3b8;
+      font-size: 9px;
+      font-weight: 600;
+    }
+
+    .paste-here-btn {
+      background: #f59e0b;
+      color: #0f172a;
+      border: none;
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 9px;
+      font-weight: 800;
+      cursor: pointer;
+      display: none;
+    }
+
+    .has-clipboard .paste-here-btn {
+      display: inline-block;
+    }
+
+    /* Filled Sticker Card — Light Thin Solid Border */
+    .sticker-card {
+      width: 100%;
+      height: 100%;
+      border: 0.75px solid #9ca3af;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      cursor: grab;
+      position: relative;
+      user-select: none;
+    }
+
+    .sticker-card:active {
+      cursor: grabbing;
+    }
+
+    /* Top Header Band (Separated by light thin line) */
+    .sticker-top-band {
+      height: 22%;
+      min-height: 5.5mm;
+      border-bottom: 0.75px solid #9ca3af;
+      width: 100%;
+      flex-shrink: 0;
+      background: #ffffff;
+    }
+
+    /* Bottom Body Area */
+    .sticker-body {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      padding: 2mm 2.5mm;
+      gap: 2.8mm;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* Circular Artist Photo on Left */
+    .sticker-avatar {
+      width: 15.5mm;
+      height: 15.5mm;
+      border-radius: 50%;
+      border: 0.85px solid #6b7280;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      font-size: 7.5px;
+      font-weight: 600;
+      color: #6b7280;
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .sticker-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Right Text Column */
+    .sticker-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1.1mm;
+      overflow: hidden;
+    }
+
+    .field-block {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .field-caption {
+      font-size: 6px;
+      font-weight: 700;
+      letter-spacing: 0.35px;
+      color: #6b7280;
+      text-transform: uppercase;
+      line-height: 1.15;
+    }
+
+    .field-value {
+      font-size: 9px;
+      font-weight: 800;
+      color: #111827;
+      text-transform: uppercase;
+      line-height: 1.18;
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .field-value.editable-text {
+      cursor: text;
+      border-radius: 2px;
+      padding: 0 2px;
+      margin-left: -2px;
+    }
+
+    .field-value.editable-text:hover {
+      background: #fef9c3;
+      outline: 0.75px solid #ca8a04;
+    }
+
+    .field-value.editable-text:focus {
+      background: #fef08a;
+      outline: 1.5px solid #2563eb;
+      user-select: text;
+      cursor: text;
+    }
+
+    /* Hover Action Controls (Hidden during Download/Export) */
+    .card-actions {
+      position: absolute;
+      top: 1px;
+      right: 2px;
+      display: flex;
+      gap: 3px;
+      opacity: 0;
+      transition: opacity 0.14s ease;
+      z-index: 10;
+    }
+
+    .sticker-slot:hover .card-actions,
+    .sticker-slot:focus-within .card-actions {
+      opacity: 1;
+    }
+
+    .mini-btn {
+      border: none;
+      border-radius: 3px;
+      padding: 1.5px 5px;
+      font-size: 8.5px;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1.2;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .mini-copy {
+      background: #0284c7;
+      color: #ffffff;
+    }
+
+    .mini-paste-next {
+      background: #059669;
+      color: #ffffff;
+    }
+
+    .mini-del {
+      background: #dc2626;
+      color: #ffffff;
+    }
+
+    /* Export Mode: Hide interactive badges/controls cleanly */
+    .exporting .card-actions,
+    .exporting .paste-here-btn,
+    .exporting .empty-slot-label {
+      display: none !important;
+    }
+
+    .exporting .empty-slot-box {
+      border-color: transparent !important;
+      background: transparent !important;
+    }
+
+    /* Footer */
+    .app-footer {
+      text-align: center;
+      padding: 14px;
+      font-size: 0.85rem;
+      color: #475569;
+      background: #ffffff;
+      border-top: 1px solid #cbd5e1;
+      margin-top: auto;
+    }
+
+    .app-footer strong {
+      color: #0f172a;
+    }
+
+    @media (max-width: 900px) {
+      .pages-workspace {
+        align-items: flex-start;
+      }
+    }
+  </style>
 </head>
 <body>
 
-    <div class="controls-panel">
-        <h1 class="controls-title">Exhibition Label Generator</h1>
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <div class="brand">
+      <h1>Artist Artwork Label Generator</h1>
+      <span class="credit-badge">Made by Darpan sukla</span>
     </div>
+    <div class="nav-tabs">
+      <button type="button" class="tab-btn active" id="tabScreen1" onclick="switchScreen(1)">
+        1. Create Label
+      </button>
+      <button type="button" class="tab-btn" id="tabScreen2" onclick="switchScreen(2)">
+        2. A4 Sheet &amp; Download (<span id="labelCountBadge">0</span>)
+      </button>
+    </div>
+  </header>
 
-    <div id="statusMessage" class="status-message">Loading live dataset and rendering labels...</div>
+  <main class="main-container">
+    <!-- ==================== SCREEN 1: INPUT FORM ==================== -->
+    <section id="screen1" class="screen active">
+      <div class="form-card">
+        <h2>Create New Artist Sticker Label</h2>
+        <p class="sub">
+          Enter artist details below. Each label automatically fills 3 columns × 9 rows per A4 sheet (27 stickers per page) and adds a new page automatically when full.
+        </p>
 
-    <div id="labelsContainer"></div>
+        <form id="labelForm" onsubmit="handleGenerateLabel(event)">
+          <div class="form-group">
+            <label for="artistPhotoInput">1. Upload Artist Photo (Optional)</label>
+            <div class="photo-upload-row">
+              <div class="photo-preview-circle" id="formPhotoPreview">No Photo</div>
+              <div>
+                <input type="file" id="artistPhotoInput" accept="image/*" onchange="handlePhotoUpload(event)" />
+                <div style="font-size: 0.76rem; color: #64748b; margin-top: 4px;">
+                  Leave blank to show "No Photo" inside the circle.
+                </div>
+              </div>
+            </div>
+          </div>
 
-    <script>
-        const DEFAULT_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTFRg_lxjO5-ps81aRxQj0V46eA9MQjMPcWM4p_OQgKPRjbaTXC5w24l45yfokmoZuyUmkEHTGtoX5q/pub?gid=0&single=true&output=csv";
+          <div class="form-group">
+            <label for="artistNameInput">2. Artist Name *</label>
+            <input
+              type="text"
+              id="artistNameInput"
+              placeholder="e.g. DARPAN SUKLA"
+              required
+            />
+          </div>
 
-        window.addEventListener('DOMContentLoaded', () => {
-            fetchSheetData();
-        });
+          <div class="form-group">
+            <label for="artworkDescInput">3. Artwork Description *</label>
+            <textarea
+              id="artworkDescInput"
+              placeholder="e.g. ACRYLIC ON CANVAS, 24X36 INCHES"
+              required
+            ></textarea>
+          </div>
 
-        function fetchSheetData() {
-            const statusEl = document.getElementById('statusMessage');
-            statusEl.textContent = "Fetching live spreadsheet data...";
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              + Generate Label &amp; Add to A4
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="switchScreen(2)">
+              View A4 Sheet →
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
 
-            fetch(DEFAULT_CSV_URL)
-                .then(response => {
-                    if (!response.ok) throw new Error("Network response failed");
-                    return response.text();
-                })
-                .then(csvText => {
-                    statusEl.textContent = "Formatting artwork labels and loading profile photos...";
-                    processCSV(csvText);
-                })
-                .catch(error => {
-                    console.error("Error loading CSV:", error);
-                    statusEl.textContent = "Unable to fetch live sheet data.";
-                });
+    <!-- ==================== SCREEN 2: A4 SHEET & EDITOR ==================== -->
+    <section id="screen2" class="screen">
+      <!-- Toolbar -->
+      <div class="editor-toolbar">
+        <div class="toolbar-group">
+          <button type="button" class="btn btn-secondary" onclick="switchScreen(1)">
+            ← Add Another Label
+          </button>
+
+          <!-- Editable A4 Size Controls -->
+          <div class="size-control" title="Edit A4 Paper Width & Height in millimeters">
+            <span>A4 Size (mm):</span>
+            <label>W</label>
+            <input type="number" id="pageWidthInput" value="210" min="100" max="450" onchange="updatePageDimensions()" />
+            <label>H</label>
+            <input type="number" id="pageHeightInput" value="297" min="150" max="600" onchange="updatePageDimensions()" />
+            <button type="button" class="mini-btn" style="background:#334155;color:#fff;padding:4px 7px;" onclick="resetA4Size()">Reset A4</button>
+          </div>
+        </div>
+
+        <div class="toolbar-group">
+          <button type="button" class="btn btn-success" onclick="downloadAllPagesPDF()">
+            Download PDF (All Pages)
+          </button>
+          <button type="button" class="btn btn-info" onclick="downloadPNG()">
+            Download PNG
+          </button>
+          <button type="button" class="btn btn-danger" onclick="clearAllLabels()">
+            Clear All
+          </button>
+        </div>
+      </div>
+
+      <!-- Clipboard Status Bar -->
+      <div id="clipboardBanner" class="clipboard-banner">
+        <span id="clipboardStatusText">Copied label ready! Click "Paste Here" on any empty slot or "+1 Next" to duplicate nearby.</span>
+        <button type="button" class="mini-btn" style="background:#92400e;color:#fff;padding:4px 8px;" onclick="clearClipboard()">Cancel Copy</button>
+      </div>
+
+      <!-- Quick Instructions -->
+      <div class="helper-bar">
+        <span class="helper-pill"><strong>Drag &amp; Drop:</strong> Drag any sticker to move or swap slots</span>
+        <span class="helper-pill"><strong>Copy &amp; Paste:</strong> Hover any sticker → <em>Copy</em> or <em>+1 Next</em> to duplicate nearby</span>
+        <span class="helper-pill"><strong>Inline Edit:</strong> Click Artist Name or Artwork Description directly on the sheet to edit</span>
+        <span class="helper-pill"><strong>Auto Pagination:</strong> 27 stickers (3 cols × 9 rows) per page; Page 2+ adds automatically</span>
+      </div>
+
+      <!-- Dynamic Multi-Page A4 Container -->
+      <div id="pagesWorkspace" class="pages-workspace"></div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    Artist Artwork Label Generator &bull; <strong>Made by Darpan sukla</strong>
+  </footer>
+
+  <script>
+    const COLS = 3;
+    const ROWS = 9;
+    const SLOTS_PER_PAGE = COLS * ROWS; // 27 stickers per A4 sheet
+
+    // Array of slot objects (null = empty slot, object = { id, photo, name, description })
+    let slots = new Array(SLOTS_PER_PAGE).fill(null);
+    let currentUploadedPhoto = null;
+    let copiedLabel = null;
+    let draggedIndex = null;
+
+    // Switch between Screen 1 and Screen 2
+    function switchScreen(screenNum) {
+      document.getElementById('screen1').classList.toggle('active', screenNum === 1);
+      document.getElementById('screen2').classList.toggle('active', screenNum === 2);
+      document.getElementById('tabScreen1').classList.toggle('active', screenNum === 1);
+      document.getElementById('tabScreen2').classList.toggle('active', screenNum === 2);
+
+      if (screenNum === 2) {
+        renderPages();
+      }
+    }
+
+    // Handle photo upload on Screen 1
+    function handlePhotoUpload(event) {
+      const file = event.target.files[0];
+      const previewEl = document.getElementById('formPhotoPreview');
+      if (!file) {
+        currentUploadedPhoto = null;
+        previewEl.innerHTML = 'No Photo';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        currentUploadedPhoto = e.target.result;
+        previewEl.innerHTML = `<img src="${currentUploadedPhoto}" alt="Artist" />`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Ensure slots array has enough pages (always multiples of 27)
+    function ensurePageCapacity(targetIndex) {
+      while (slots.length <= targetIndex) {
+        for (let i = 0; i < SLOTS_PER_PAGE; i++) {
+          slots.push(null);
         }
+      }
+    }
 
-        function parseCSV(text) {
-            const lines = text.split(/\r\n|\n/);
-            const result = [];
-
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
-
-                const row = [];
-                let insideQuote = false;
-                let entry = '';
-
-                for (let j = 0; j < line.length; j++) {
-                    const char = line[j];
-
-                    if (char === '"' || char === "'") {
-                        insideQuote = !insideQuote;
-                    } else if (char === ',' && !insideQuote) {
-                        row.push(entry.trim());
-                        entry = '';
-                    } else {
-                        entry += char;
-                    }
-                }
-
-                row.push(entry.trim());
-                result.push(row);
-            }
-
-            return result;
+    // Trim completely empty trailing pages (keep at least 1 page of 27 slots)
+    function normalizePages() {
+      while (slots.length > SLOTS_PER_PAGE) {
+        const lastPageSlice = slots.slice(slots.length - SLOTS_PER_PAGE);
+        const isLastPageEmpty = lastPageSlice.every((item) => item === null);
+        if (isLastPageEmpty) {
+          slots.splice(slots.length - SLOTS_PER_PAGE, SLOTS_PER_PAGE);
+        } else {
+          break;
         }
+      }
+    }
 
-        function processCSV(csvText) {
-            const rows = parseCSV(csvText);
-            if (rows.length < 2) return;
+    // Generate label from Screen 1 and add to first available slot (auto-adds new page if full)
+    function handleGenerateLabel(event) {
+      event.preventDefault();
+      const nameVal = document.getElementById('artistNameInput').value.trim();
+      const descVal = document.getElementById('artworkDescInput').value.trim();
 
-            const headers = rows[0].map(h => h.toLowerCase().trim());
+      if (!nameVal || !descVal) return;
 
-            const nameIdx = headers.findIndex(h => h.includes('name'));
-            const photoIdx = headers.findIndex(h => h.includes('profile') || h.includes('photo'));
+      const newLabel = {
+        id: Date.now() + Math.random(),
+        photo: currentUploadedPhoto,
+        name: nameVal,
+        description: descVal
+      };
 
-            const desc1Idx = headers.findIndex(h => h.includes('artwork 1 description') || h.includes('desc 1'));
-            const desc2Idx = headers.findIndex(h => h.includes('artwork 2 description') || h.includes('desc 2'));
+      // Find first empty slot across existing pages
+      let emptyIdx = slots.findIndex((item) => item === null);
 
-            const labels = [];
+      // If all current pages (27 per page) are full, automatically add next A4 page
+      if (emptyIdx === -1) {
+        emptyIdx = slots.length;
+        ensurePageCapacity(emptyIdx);
+      }
 
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row || row.length === 0) continue;
+      slots[emptyIdx] = newLabel;
 
-                const name = nameIdx !== -1 ? row[nameIdx] : '';
-                const rawPhoto = photoIdx !== -1 ? row[photoIdx] : '';
-                const photoUrl = formatGoogleDriveUrl(rawPhoto);
+      // Reset form inputs for next entry
+      document.getElementById('labelForm').reset();
+      currentUploadedPhoto = null;
+      document.getElementById('formPhotoPreview').innerHTML = 'No Photo';
 
-                const desc1 = desc1Idx !== -1 ? row[desc1Idx] : '';
+      updateBadgeCount();
+      switchScreen(2);
+    }
 
-                if (desc1) {
-                    labels.push({
-                        artistName: name,
-                        photoUrl: photoUrl,
-                        description: desc1
-                    });
-                }
+    function updateBadgeCount() {
+      const filled = slots.filter((s) => s !== null).length;
+      document.getElementById('labelCountBadge').textContent = filled;
+    }
 
-                const desc2 = desc2Idx !== -1 ? row[desc2Idx] : '';
+    // Editable A4 Page Size Handler
+    function updatePageDimensions() {
+      const w = parseFloat(document.getElementById('pageWidthInput').value) || 210;
+      const h = parseFloat(document.getElementById('pageHeightInput').value) || 297;
+      document.documentElement.style.setProperty('--page-w', w + 'mm');
+      document.documentElement.style.setProperty('--page-h', h + 'mm');
+      fitAllTexts();
+    }
 
-                if (desc2) {
-                    labels.push({
-                        artistName: name,
-                        photoUrl: photoUrl,
-                        description: desc2
-                    });
-                }
-            }
+    function resetA4Size() {
+      document.getElementById('pageWidthInput').value = 210;
+      document.getElementById('pageHeightInput').value = 297;
+      updatePageDimensions();
+    }
 
-            renderLabels(labels);
+    // Copy & Paste Feature
+    function copyLabel(index) {
+      if (!slots[index]) return;
+      copiedLabel = { ...slots[index] };
+      const banner = document.getElementById('clipboardBanner');
+      banner.classList.add('visible');
+      document.getElementById('clipboardStatusText').textContent =
+        `Copied "${copiedLabel.name}". Click "Paste Here" on any empty slot or "+1 Next" to duplicate nearby.`;
+      renderPages();
+    }
+
+    function clearClipboard() {
+      copiedLabel = null;
+      document.getElementById('clipboardBanner').classList.remove('visible');
+      renderPages();
+    }
+
+    function pasteLabelAt(targetIndex) {
+      if (!copiedLabel) return;
+      ensurePageCapacity(targetIndex);
+      slots[targetIndex] = {
+        ...copiedLabel,
+        id: Date.now() + Math.random()
+      };
+      updateBadgeCount();
+      renderPages();
+    }
+
+    // Quick duplicate right next to the current sticker (or nearest available slot)
+    function duplicateNearby(index) {
+      const source = slots[index];
+      if (!source) return;
+
+      let targetIdx = -1;
+      for (let i = index + 1; i < slots.length; i++) {
+        if (slots[i] === null) {
+          targetIdx = i;
+          break;
         }
+      }
+      if (targetIdx === -1) {
+        targetIdx = slots.findIndex((item) => item === null);
+      }
+      if (targetIdx === -1) {
+        targetIdx = slots.length;
+        ensurePageCapacity(targetIdx);
+      }
 
-        function formatGoogleDriveUrl(url) {
-            if (!url) return '';
+      slots[targetIdx] = {
+        ...source,
+        id: Date.now() + Math.random()
+      };
+      updateBadgeCount();
+      renderPages();
+    }
 
-            url = url.trim().replace(/^["']|["']$/g, '');
+    function deleteLabel(index) {
+      slots[index] = null;
+      normalizePages();
+      updateBadgeCount();
+      renderPages();
+    }
 
-            const driveMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+    function clearAllLabels() {
+      if (!confirm('Clear all labels from the A4 sheet?')) return;
+      slots = new Array(SLOTS_PER_PAGE).fill(null);
+      copiedLabel = null;
+      document.getElementById('clipboardBanner').classList.remove('visible');
+      updateBadgeCount();
+      renderPages();
+    }
 
-            if (driveMatch && driveMatch[1]) {
-                const fileId = driveMatch[1];
-                return `https://drive.google.com/thumbnail?id=${fileId}&sz=w500`;
-            }
+    // Inline Editing of Artist Name & Artwork Description
+    function updateInlineField(index, field, el) {
+      if (!slots[index]) return;
+      const newText = el.innerText.trim();
+      if (newText) {
+        slots[index][field] = newText;
+      } else {
+        el.innerText = slots[index][field];
+      }
+      fitSingleCardText(el.closest('.sticker-card'));
+    }
 
-            return url;
-        }
+    // Drag and Drop Handlers (Move or Swap stickers smoothly)
+    function handleDragStart(event, index) {
+      draggedIndex = index;
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', String(index));
+    }
 
-        function renderLabels(labels) {
-            const container = document.getElementById('labelsContainer');
-            container.innerHTML = '';
+    function handleDragOver(event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      event.currentTarget.classList.add('drag-over');
+    }
 
-            if (labels.length === 0) {
-                container.innerHTML = '<p style="text-align:center; padding: 20px; color:#fff;">No artwork descriptions found in spreadsheet.</p>';
-                return;
-            }
+    function handleDragLeave(event) {
+      event.currentTarget.classList.remove('drag-over');
+    }
 
-            const LABELS_PER_PAGE = 27;
-            let currentPage = createA4Page();
-            container.appendChild(currentPage);
+    function handleDrop(event, targetIndex) {
+      event.preventDefault();
+      event.currentTarget.classList.remove('drag-over');
+      if (draggedIndex === null || draggedIndex === targetIndex) return;
 
-            labels.forEach((data, index) => {
-                if (index > 0 && index % LABELS_PER_PAGE === 0) {
-                    currentPage = createA4Page();
-                    container.appendChild(currentPage);
-                }
+      const temp = slots[targetIndex];
+      slots[targetIndex] = slots[draggedIndex];
+      slots[draggedIndex] = temp;
+      draggedIndex = null;
 
-                const labelCard = document.createElement('div');
-                labelCard.className = 'label-card';
+      normalizePages();
+      renderPages();
+    }
 
-                const photoHtml = data.photoUrl
-                    ? `<img src="${data.photoUrl}" class="artist-photo" alt="${data.artistName}" onerror="handleImageError(this, '${data.photoUrl}')">`
-                    : `<span class="photo-placeholder">No Photo</span>`;
+    // Escape HTML safely
+    function escapeHTML(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
 
-                labelCard.innerHTML = `
-                    <div class="fold-zone"></div>
-                    <div class="label-content">
-                        <div class="artist-photo-container">
-                            ${photoHtml}
-                        </div>
-                        <div class="label-details">
-                            <div class="section-artist">
-                                <span class="field-label">Artist Name</span>
-                                <div class="artist-name">${data.artistName || 'Artist Name'}</div>
-                            </div>
-                            ${data.description ? `
-                            <div>
-                                <span class="field-label">Artwork Description</span>
-                                <div class="artwork-desc">${data.description}</div>
-                            </div>` : ''}
-                        </div>
+    // Render all A4 Pages (3 columns x 9 rows = 27 per page)
+    function renderPages() {
+      const workspace = document.getElementById('pagesWorkspace');
+      workspace.innerHTML = '';
+      workspace.classList.toggle('has-clipboard', Boolean(copiedLabel));
+
+      const totalPages = Math.max(1, Math.ceil(slots.length / SLOTS_PER_PAGE));
+
+      for (let p = 0; p < totalPages; p++) {
+        const pageWrapper = document.createElement('div');
+        pageWrapper.className = 'page-wrapper';
+
+        const pageStart = p * SLOTS_PER_PAGE;
+        const pageEnd = pageStart + SLOTS_PER_PAGE;
+        const filledInPage = slots.slice(pageStart, pageEnd).filter(Boolean).length;
+
+        const headerBar = document.createElement('div');
+        headerBar.className = 'page-header-bar';
+        headerBar.innerHTML = `
+          <span>Page ${p + 1} of ${totalPages} (3 Columns × 9 Rows)</span>
+          <span>${filledInPage} / ${SLOTS_PER_PAGE} Stickers Used</span>
+        `;
+        pageWrapper.appendChild(headerBar);
+
+        const sheet = document.createElement('div');
+        sheet.className = 'a4-sheet';
+        sheet.id = `a4-page-${p}`;
+
+        for (let i = pageStart; i < pageEnd; i++) {
+          const item = slots[i];
+          const rowNum = Math.floor((i - pageStart) / COLS) + 1;
+          const colNum = ((i - pageStart) % COLS) + 1;
+
+          const slotDiv = document.createElement('div');
+          slotDiv.className = 'sticker-slot';
+          slotDiv.setAttribute('ondragover', 'handleDragOver(event)');
+          slotDiv.setAttribute('ondragleave', 'handleDragLeave(event)');
+          slotDiv.setAttribute('ondrop', `handleDrop(event, ${i})`);
+
+          if (!item) {
+            slotDiv.innerHTML = `
+              <div class="empty-slot-box">
+                <span class="empty-slot-label">R${rowNum} · C${colNum}</span>
+                <button type="button" class="paste-here-btn" onclick="pasteLabelAt(${i})">Paste Here</button>
+              </div>
+            `;
+          } else {
+            const avatarHTML = item.photo
+              ? `<img src="${item.photo}" alt="Artist" />`
+              : `No Photo`;
+
+            slotDiv.innerHTML = `
+              <div class="sticker-card" draggable="true" ondragstart="handleDragStart(event, ${i})">
+                <div class="card-actions">
+                  <button type="button" class="mini-btn mini-copy" title="Copy Label" onclick="copyLabel(${i})">Copy</button>
+                  <button type="button" class="mini-btn mini-paste-next" title="Copy & Paste in Next Slot" onclick="duplicateNearby(${i})">+1 Next</button>
+                  <button type="button" class="mini-btn mini-del" title="Remove Sticker" onclick="deleteLabel(${i})">✕</button>
+                </div>
+                <div class="sticker-top-band"></div>
+                <div class="sticker-body">
+                  <div class="sticker-avatar">${avatarHTML}</div>
+                  <div class="sticker-info">
+                    <div class="field-block">
+                      <span class="field-caption">ARTIST NAME</span>
+                      <div
+                        class="field-value editable-text"
+                        contenteditable="true"
+                        spellcheck="false"
+                        title="Click to edit Artist Name"
+                        onblur="updateInlineField(${i}, 'name', this)"
+                      >${escapeHTML(item.name)}</div>
                     </div>
-                `;
+                    <div class="field-block">
+                      <span class="field-caption">ARTWORK DESCRIPTION</span>
+                      <div
+                        class="field-value editable-text"
+                        contenteditable="true"
+                        spellcheck="false"
+                        title="Click to edit Artwork Description"
+                        onblur="updateInlineField(${i}, 'description', this)"
+                      >${escapeHTML(item.description)}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
 
-                currentPage.appendChild(labelCard);
-            });
-
-            document.getElementById('statusMessage').textContent = "Labels ready for download.";
+          sheet.appendChild(slotDiv);
         }
 
-        function handleImageError(imgEl, originalUrl) {
-            const driveMatch = originalUrl.match(/id=([a-zA-Z0-9_-]+)/) || originalUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        pageWrapper.appendChild(sheet);
+        workspace.appendChild(pageWrapper);
+      }
 
-            if (driveMatch && driveMatch[1]) {
-                const fileId = driveMatch[1];
+      updateBadgeCount();
+      requestAnimationFrame(fitAllTexts);
+    }
 
-                if (!imgEl.dataset.tryLh3) {
-                    imgEl.dataset.tryLh3 = 'true';
-                    imgEl.src = `https://lh3.googleusercontent.com/d/${fileId}=s500`;
-                } else if (!imgEl.dataset.tryProxy) {
-                    imgEl.dataset.tryProxy = 'true';
-                    imgEl.src = `https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy?container=focus&refresh=2592000&url=${encodeURIComponent(`https://drive.google.com/uc?export=view&id=${fileId}`)}`;
-                } else {
-                    imgEl.parentElement.innerHTML = '<span class="photo-placeholder">No Photo</span>';
-                }
-            } else {
-                imgEl.parentElement.innerHTML = '<span class="photo-placeholder">No Photo</span>';
-            }
+    // Auto-scale text slightly if a very long name/description overflows its sticker box
+    function fitSingleCardText(card) {
+      if (!card) return;
+      const body = card.querySelector('.sticker-body');
+      const info = card.querySelector('.sticker-info');
+      const values = card.querySelectorAll('.field-value');
+      if (!body || !info) return;
+
+      let size = 9;
+      values.forEach((v) => {
+        v.style.fontSize = size + 'px';
+        v.style.lineHeight = '1.16';
+      });
+
+      while (info.scrollHeight > body.clientHeight - 2 && size > 6) {
+        size -= 0.5;
+        values.forEach((v) => {
+          v.style.fontSize = size + 'px';
+          v.style.lineHeight = '1.12';
+        });
+      }
+    }
+
+    function fitAllTexts() {
+      document.querySelectorAll('.sticker-card').forEach(fitSingleCardText);
+    }
+
+    // Export All A4 Pages to Multi-Page PDF
+    async function downloadAllPagesPDF() {
+      const sheets = document.querySelectorAll('.a4-sheet');
+      if (!sheets.length) return;
+
+      const w = parseFloat(document.getElementById('pageWidthInput').value) || 210;
+      const h = parseFloat(document.getElementById('pageHeightInput').value) || 297;
+      const orientation = w > h ? 'landscape' : 'portrait';
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({
+        orientation: orientation,
+        unit: 'mm',
+        format: [w, h]
+      });
+
+      document.body.classList.add('exporting');
+
+      try {
+        for (let i = 0; i < sheets.length; i++) {
+          if (i > 0) pdf.addPage([w, h], orientation);
+          const canvas = await html2canvas(sheets[i], {
+            scale: 2.5,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+          });
+          const imgData = canvas.toDataURL('image/png');
+          pdf.addImage(imgData, 'PNG', 0, 0, w, h);
         }
+        pdf.save('Artist_Artwork_Labels_A4.pdf');
+      } finally {
+        document.body.classList.remove('exporting');
+      }
+    }
 
-        function createA4Page() {
-            const page = document.createElement('div');
-            page.className = 'a4-page';
-            return page;
+    // Export Each A4 Page as High-Res PNG
+    async function downloadPNG() {
+      const sheets = document.querySelectorAll('.a4-sheet');
+      if (!sheets.length) return;
+
+      document.body.classList.add('exporting');
+
+      try {
+        for (let i = 0; i < sheets.length; i++) {
+          const canvas = await html2canvas(sheets[i], {
+            scale: 2.5,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+          });
+          const link = document.createElement('a');
+          link.download =
+            sheets.length === 1
+              ? 'Artist_Artwork_Labels_A4.png'
+              : `Artist_Artwork_Labels_Page_${i + 1}.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
         }
-    </script>
+      } finally {
+        document.body.classList.remove('exporting');
+      }
+    }
+
+    // Initial render
+    renderPages();
+  </script>
 </body>
 </html>
